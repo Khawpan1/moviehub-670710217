@@ -1,33 +1,22 @@
-import { useEffect,useState } from 'react';
+import { useEffect, useState } from 'react';
 import MovieGrid from '../components/MovieGrid';
-import { getMovies, CACHE_KEY } from '../api/tmdb';
-import { forget } from '../api/cache';
-
-// TODO ขั้นที่ 3: import { useEffect } from 'react' และ import { getMovies, CACHE_KEY } from '../api/tmdb' กับ { forget } from '../api/cache'
+import { getMovies } from '../api/backend';
 
 function Movies() {
   const [query, setQuery] = useState('');          // คำค้น (controlled input) กรองในเครื่อง ไม่ยิง API
   const [genre, setGenre] = useState('all');  
-  const [movies, setMovies] = useState([]);        // รายการจาก getMovies() (โหลดจริงวันละครั้ง)
+  const [movies, setMovies] = useState([]);        // รายการจาก getMovies()
   const [status, setStatus] = useState('loading'); // 'loading' | 'success' | 'error'
   const [error, setError] = useState(null);
-  const [reloadKey, setReloadKey] = useState(0);     // แนวที่เลือกจากแถบปุ่ม 'all' = ทุกแนว
+  const [reloadKey, setReloadKey] = useState(0);     // ตัวนับสำหรับโหลดซ้ำ
 
-  // TODO ขั้นที่ 3: เปลี่ยน 3 ค่าคงที่ด้านล่างให้เป็น state แล้วโหลดจาก API ด้วย useEffect
-  //   movies   เริ่มจาก []  (รายการที่ได้จาก getMovies() ซึ่งโหลดจริงวันละครั้ง)
-  //   status   'loading' | 'success' | 'error'
-  //   error    Error หรือ null
-  //   และ reloadKey (ตัวนับ) สำหรับปุ่ม "ลองใหม่" ที่ต้อง forget(CACHE_KEY) ก่อนโหลดซ้ำ
-  // const movies = localMovies;
-  // const status = 'success';
-  // const error = null;
   useEffect(() => {
     let ignore = false;                            // ธงกันคำตอบเก่ามาทับคำตอบใหม่
 
     async function load() {
       setStatus('loading');
       try {
-        const list = await getMovies();            // ครั้งแรกของวันยิง API ครั้งถัดไปอ่านจาก localStorage
+        const list = await getMovies();            // ดึงข้อมูลจาก Backend
         if (!ignore) {
           setMovies(list);
           setStatus('success');
@@ -41,7 +30,7 @@ function Movies() {
     }
     load();
 
-    return () => { ignore = true; };               // cleanup: effect รอบเก่าถูกยกเลิก
+    return () => { ignore = true; };               // cleanup
   }, [reloadKey]);
 
   // ค่าที่คำนวณจาก state ไม่ต้องเป็น state เอง: รายชื่อแนวที่มีจริง และรายการหลังกรอง
@@ -62,7 +51,7 @@ function Movies() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">หนังทั้งหมด</h1>
           <p className="text-sm text-slate-500">
-            แหล่งข้อมูล:TMDB (โหลดวันละครั้ง) {status === 'success' && `| พบ ${shown.length} จาก ${movies.length} เรื่อง`}
+            แหล่งข้อมูล: Backend {status === 'success' && `| พบ ${shown.length} จาก ${movies.length} เรื่อง`}
           </p>
         </div>
         <input value={query} onChange={(e) => setQuery(e.target.value)}
@@ -79,7 +68,7 @@ function Movies() {
       </div>
 
       <MovieGrid movies={shown} status={status} error={error}
-                 onRetry={() => { forget(CACHE_KEY); setReloadKey(k => k + 1); }} />
+                 onRetry={() => { setReloadKey(k => k + 1); }} />
     </div>
   );
 }
